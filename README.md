@@ -1,5 +1,13 @@
 # React + TypeScript + Vite
 
+## Local Firebase setup
+
+Copy `.env.example` to `.env.local` in the project root and fill in the Firebase web app configuration from the Firebase console. The existing `.env.local`, if present, already contains your local configuration and is ignored by Git.
+
+Run `npm install`, then `npm run dev`. Restart the dev server after changing environment variables. Vite exposes variables prefixed with `VITE_` to the browser, so use only Firebase's public web app configuration here; never add service account credentials.
+
+Run `npm run build` to build the app for Firebase Hosting. The default Firebase project is `th-thanks-givers`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
