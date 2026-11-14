@@ -22,6 +22,8 @@ type DashboardPageProps = {
   onGoToForm: () => void;
   onViewLetters: () => void;
   onLogout: () => void;
+  isAdmin: boolean;
+  onViewAdmin: () => void; //thisruns when admin button is clicked
 };
 
 export function DashboardPage({
@@ -29,6 +31,8 @@ export function DashboardPage({
   onGoToForm,
   onViewLetters,
   onLogout,
+  isAdmin,
+  onViewAdmin,
 }: DashboardPageProps) {
   const [messages, setMessages] = useState<SentMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,6 +134,16 @@ export function DashboardPage({
       >
         see your written letters!
       </button>
+      {/* Only admins see this button. */}
+      {isAdmin === true && (
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={onViewAdmin}
+        >
+          admin mode :p
+        </button>
+      )}
       <button onClick={onLogout} className="button-secondary">
         nah goodbye
       </button>
