@@ -1,36 +1,31 @@
-// src/userNames.ts
+// src/userNames.tss
 
 // This defines the "shape" of our user object
 export type User = {
   realName: string;
   nickname: string;
+  displayName?: string;
 };
 
-// This is our main list of users
 export const userList: User[] = [
-  { realName: "AJ", nickname: "bAJ" },
-  { realName: "Abhi", nickname: "adeezius" },
-  { realName: "Adam", nickname: "bi bheng adum beo" },
+  { realName: "Abhitej", nickname: "adeezius", displayName: "Abhi" },
   { realName: "Ananya", nickname: "ananyabananya" },
   { realName: "Annie", nickname: "banniebumblebee" },
   { realName: "Ashlee", nickname: "ashluzz" },
+  { realName: "ashi", nickname: "ashi", displayName: "Ashi" },
   { realName: "Bella", nickname: "bella royofsunshine" },
-  { realName: "Ben", nickname: "ben10" },
   { realName: "Blessing", nickname: "blessuzz" },
-  { realName: "Claire", nickname: "claireblaireuzzwuzz" },
+  { realName: "Caleb", nickname: "Caleb" },
   { realName: "Eric", nickname: "bleric" },
-  { realName: "Harsh", nickname: "barsh"},
+  { realName: "evelyn", nickname: "evelyn", displayName: "Evelyn" },
   { realName: "Jashith", nickname: "zashith" },
   { realName: "Justin", nickname: "bustinble" },
   { realName: "Katelyn", nickname: "katelynuzz" },
-  { realName: "Kat", nickname: "bat" },
-  { realName: "Keshav", nickname: "beshav bharshan" },
+  { realName: "Lucius", nickname: "Lucius" },
   { realName: "Monish", nickname: "marvelously malignant" },
-  { realName: "Nafi", nickname: "bafi" },
-  { realName: "Nico", nickname: "bicolas bomero" },
-  { realName: "Niki", nickname: "ikkinikibikibonki" },
+  { realName: "Nikita", nickname: "ikkinikibikibonki", displayName: "Niki" },
   { realName: "Nmesoma", nickname: "nmesomuzz" },
-  { realName: "Rita", nickname: "ritamymargarita" },
+  { realName: "Rayla", nickname: "Rayla" },
   { realName: "Sandeep", nickname: "rook" },
   { realName: "Shaan", nickname: "shaun the sheep" },
   { realName: "Veronica", nickname: "veronicaroni" },

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { db } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { userList } from "../userNames";
 
@@ -24,12 +24,18 @@ export function ThanksFormPage({
     setIsSubmitting(true);
 
     try {
+      const user = auth.currentUser;
+
+      if (user == null){
+        throw Error("you have to be signed in before sending a message baka");
+      }
       const from = isAnonymous ? "Anonymous" : currentUser;
 
       const docRef = await addDoc(collection(db, "messages"), {
         to: recipient,
         message: message,
         from: from,
+        senderId : user.uid, //saves account
         createdAt: serverTimestamp(),
       });
 
@@ -59,7 +65,7 @@ export function ThanksFormPage({
             .filter((user) => user.nickname !== currentUser)
             .map((user) => (
               <option key={user.realName} value={user.realName}>
-                {user.realName}
+                {(user.displayName || user.realName).toLowerCase()}
               </option>
             ))}
         </select>
