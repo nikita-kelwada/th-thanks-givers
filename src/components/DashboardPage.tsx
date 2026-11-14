@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebaseConfig";
-import { userList } from "../userNames";
 import {
   collection,
   query,
@@ -18,20 +17,17 @@ type SentMessage = {
   createdAt: number;
 };
 
-function recipientLabel(name: string) {
-  const recipient = userList.find((user) => user.realName === name);
-  return (recipient?.displayName || name).toLowerCase();
-}
-
 type DashboardPageProps = {
   currentUser: string;
   onGoToForm: () => void;
+  onViewLetters: () => void;
   onLogout: () => void;
 };
 
 export function DashboardPage({
   currentUser,
   onGoToForm,
+  onViewLetters,
   onLogout,
 }: DashboardPageProps) {
   const [messages, setMessages] = useState<SentMessage[]>([]);
@@ -120,31 +116,19 @@ export function DashboardPage({
         </p>
       )}
 
-      {!isLoading && !loadError && (
-        <section className="sent-letters" aria-label="your sent letters">
-          {messages.length === 0 && <p>you haven't written any letters yet and you're chopped</p>}
-
-          {/* Show one card for each saved letter. */}
-          {messages.map((letter) => (
-            <article className="sent-letter" key={letter.id}>
-              <div className="letter-heading">
-                <h3>to: {recipientLabel(letter.to)}</h3>
-                {letter.from === "Anonymous" && (
-                  <span className="anonymous-label">anonymous</span>
-                )}
-              </div>
-              <p className="letter-text">{letter.message}</p>
-            </article>
-          ))}
-        </section>
-      )}
-
       <button
         onClick={onGoToForm}
         className="button-primary"
         disabled={isLoading}
       >
         write a message!
+      </button>
+      <button
+        type="button"
+        onClick={onViewLetters}
+        className="button-secondary"
+      >
+        see your written letters!
       </button>
       <button onClick={onLogout} className="button-secondary">
         nah goodbye

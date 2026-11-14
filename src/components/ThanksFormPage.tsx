@@ -102,7 +102,7 @@ export function ThanksFormPage({
           onClick={onFormSubmit}
           className="button-secondary"
         >
-          bye bye!
+          back to dashboard
         </button>
       </form>
     </div>

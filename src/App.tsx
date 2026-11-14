@@ -3,6 +3,7 @@ import "./App.css";
 import { WelcomePage } from "./components/WelcomePage";
 import { DashboardPage } from "./components/DashboardPage";
 import { ThanksFormPage } from "./components/ThanksFormPage";
+import { WrittenLettersPage } from "./components/WrittenLettersPage";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
@@ -11,7 +12,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [isCheckingLogin, setIsCheckingLogin] = useState(true);
 
-  type Page = "dashboard" | "form";
+  type Page = "dashboard" | "form" | "writtenLetters";
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
 
   //add use effect : tells react to run the code that connects the component to firebase (goes to firebase, gets info abt who signed in)
@@ -72,6 +73,7 @@ function App() {
       <DashboardPage
         currentUser={currentUser}
         onGoToForm={() => setCurrentPage("form")}
+        onViewLetters={() => setCurrentPage("writtenLetters")}
         onLogout={handleLogout}
       />
     );
@@ -82,6 +84,15 @@ function App() {
       <ThanksFormPage
         currentUser={currentUser}
         onFormSubmit={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "writtenLetters") {
+    return (
+      <WrittenLettersPage
+        currentUser={currentUser}
+        onBack={() => setCurrentPage("dashboard")}
       />
     );
   }

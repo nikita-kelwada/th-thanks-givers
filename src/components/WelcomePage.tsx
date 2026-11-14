@@ -45,7 +45,7 @@ export function WelcomePage({ onLogin }: WelcomePageProps) {
 
   return (
     <div className="welcome-page">
-      <h1>HOWRRDY HACKERS</h1>
+      <h1>HOWDYYYY HACKERS</h1>
       <h2>it is time to show your thankfulness!</h2>
 
       {/*button for signing in */}
