@@ -1,40 +1,23 @@
 import { useState } from "react";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebaseConfig";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../firebaseConfig";
 
 type WelcomePageProps = {
-  onLogin: (name: string) => void;
+  accessError?: string;
 };
 
-export function WelcomePage({ onLogin }: WelcomePageProps) {
+export function WelcomePage({ accessError = "" }: WelcomePageProps) {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [signInError, setSignInError] = useState("");
-  {/* thing tha thandles the google sign in popup (not the validation} */}
   const handleGoogleSignIn = async () => {
+    if (isSigningIn) return;
     setIsSigningIn(true);
     setSignInError("");
 
     try {
-      const result = await signInWithPopup(auth, new GoogleAuthProvider());
-          const email = result.user.email;
-
-          if (!email || !result.user.emailVerified) {
-            await signOut(auth);
-            setSignInError("Please use a verified Google account.");
-            return;
-          }
-
-          const member = await getDoc(doc(db, "members", email));
-          const nickname = member.data()?.nickname;
-
-          if (!member.exists() || typeof nickname !== "string" || !nickname.trim()) {
-            await signOut(auth);
-            setSignInError("This account isn't on the approved member list.");
-            return;
-          }
-
-          onLogin(nickname);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Google sign-in failed:", error);
       setSignInError("Couldn't sign in. Please try again.");
@@ -45,19 +28,35 @@ export function WelcomePage({ onLogin }: WelcomePageProps) {
 
   return (
     <div className="welcome-page">
-      <h1>HOWDYYYY HACKERS</h1>
-      <h2>it is time to show your thankfulness!</h2>
+      <main className="welcome-content">
+        <h1>HOWDYYYY HACKERS</h1>
+        <h2>it’s time to show your appreciation!</h2>
+        <div className="welcome-intro">
+          <p>
+            Tell your fellow directors what you appreciate about them!
+          </p>
+          <p>
+            Write as many notes as you want, short or long!
+            <br />
+            They’ll be delivered at Friendsgiving!
+          </p>
+        </div>
+        <p className="welcome-deadline">
+          <span>write your notes by</span>
+          <strong>Thursday, Nov. 19 at 11:59 PM</strong>
+        </p>
 
-      {/*button for signing in */}
-      <button type = "button"
-      className = "button-primary"
-      onClick = {handleGoogleSignIn}
-      disabled = {isSigningIn}>
-        {isSigningIn ? "Signing in..." : "Sign in with Google"}
-      </button>
-      {signInError && <p role="alert">{signInError}</p>}
-
-    
+        <p className="welcome-signin-note">please sign in with your personal email!</p>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={handleGoogleSignIn}
+          disabled={isSigningIn}
+        >
+          {isSigningIn ? "Signing in..." : "Sign in with Google"}
+        </button>
+        {(signInError || accessError) && <p role="alert">{signInError || accessError}</p>}
+      </main>
     </div>
   );
 }

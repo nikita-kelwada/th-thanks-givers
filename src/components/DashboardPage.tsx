@@ -108,7 +108,7 @@ export function DashboardPage({
 
   return (
     <div className="dashboard-page">
-      <h2>welcome {currentUser}!</h2>
+      <h2>welcome {currentUser.toLowerCase()}!</h2>
 
       {isLoading ? (
         <p role="status">loading your letters...</p>

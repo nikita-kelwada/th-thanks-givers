@@ -4,83 +4,68 @@ import { WelcomePage } from "./components/WelcomePage";
 import { DashboardPage } from "./components/DashboardPage";
 import { ThanksFormPage } from "./components/ThanksFormPage";
 import { WrittenLettersPage } from "./components/WrittenLettersPage";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "./firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { AdminPage } from "./components/AdminPage";
+import { watchAccountAccess } from "./accountAccess";
+import type { AccountAccess } from "./accountAccess";
 
 
 function App() {
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [isCheckingLogin, setIsCheckingLogin] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [access, setAccess] = useState<AccountAccess>({ status: "loading" });
+  const [accessAttempt, setAccessAttempt] = useState(0);
 
   type Page = "dashboard" | "form" | "writtenLetters" | "admin";
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
 
-  //add use effect : tells react to run the code that connects the component to firebase (goes to firebase, gets info abt who signed in)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => { //wait for firestore to return the member record
-      setIsAdmin(false);
-      if (user === null || user.email === null || user.emailVerified === false) {
-        setCurrentUser(null);
-        setIsCheckingLogin(false);
-        return;
-      }
-
-      try {
-        const memberReference = doc(db, "members", user.email.toLowerCase());
-        const memberSnapshot = await getDoc(memberReference);
-
-        const member = memberSnapshot.data();
-
-        if (member === undefined) {
-          setCurrentUser(null);
-          return;
-        }
-
-        if (typeof member.nickname !== "string") {
-          setCurrentUser(null);
-          return;
-        }
-
-        setCurrentUser(member.nickname);
-        const adminReference = doc(db, "admin", user.email.toLowerCase());
-        const adminDocument = await getDoc(adminReference);
-
-
-        if (adminDocument.exists()){
-          const admin = adminDocument.data();
-          setIsAdmin(admin.enabled === true);
-        }else{setIsAdmin(false);}
-
-      } catch (error) {
-        console.error("Couldn't load the member record:", error);
-      } finally {
-        setIsCheckingLogin(false);
-      }
+    return watchAccountAccess({
+      subscribe: (callback) => onAuthStateChanged(auth, (user) => {
+        setCurrentPage("dashboard");
+        callback(user);
+      }),
+      readRecord: async (collection, email) => (await getDoc(doc(db, collection, email))).data(),
+      publish: setAccess,
     });
+  }, [accessAttempt]);
 
-    return unsubscribe;
-  }, []);
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setIsAdmin(false);
-    setCurrentPage("dashboard");
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Couldn't sign out:", error);
+      setAccess({ status: "error", message: "Couldn't sign out. Please try again." });
+    }
   };
 
-  if (isCheckingLogin) {
+  if (access.status === "loading") {
     return (
       <div className="welcome-page">
-        <p>Checking your login...</p>
+        <p role="status">checking your account...</p>
       </div>
     );
   }
 
-  if (currentUser === null) {
-    return <WelcomePage onLogin={setCurrentUser} />;
+  if (access.status === "error") {
+    return (
+      <div className="welcome-page">
+        <p role="alert">{access.message}</p>
+        <button type="button" className="button-primary" onClick={() => {
+          setAccess({ status: "loading" });
+          setAccessAttempt((previous) => previous + 1);
+        }}>try again</button>
+        <button type="button" className="button-secondary" onClick={handleLogout}>sign out</button>
+      </div>
+    );
   }
+
+  if (access.status !== "ready") {
+    return <WelcomePage accessError={access.status === "denied" ? access.message : ""} />;
+  }
+
+  const currentUser = access.nickname;
+  const isAdmin = access.isAdmin;
 
   if (currentPage === "dashboard") {
     return (
