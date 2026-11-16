@@ -6,7 +6,15 @@ Copy `.env.example` to `.env.local` in the project root and fill in the Firebase
 
 Run `npm install`, then `npm run dev`. Restart the dev server after changing environment variables. Vite exposes variables prefixed with `VITE_` to the browser, so use only Firebase's public web app configuration here; never add service account credentials.
 
-Run `npm run build` to build the app for Firebase Hosting. The default Firebase project is `th-thanks-givers`.
+Run `npm run build` to build the app for Firebase Hosting. The default Firebase project is `tiny-thanks-a0fd0`.
+
+Users can edit message text from **see your written letters!** using **edit**, then **save** or **cancel**. Saving updates the original letter and its admin copy together while preserving the recipient, anonymity, and original timestamp. Older named letters without a sender account ID can be edited by the member with the matching nickname.
+
+The edit feature requires the updated Firestore rules. Deploy them along with the app using `npx firebase deploy --only firestore:rules,hosting` after building. The local build does not publish these changes.
+
+Admin mode lists `adminMessages` in real time, newest first, with a recipient filter. Access requires a verified member account and an `admin/<lowercase email>` document with the boolean field `enabled: true`. Create that document through the Firebase console; the app cannot grant admin access. Admin copies include the recipient, message, displayed sender, and timestamp, without the sender account ID.
+
+New submissions create the original and admin copy atomically, and edits update both. Older letters created before admin copies were introduced need a trusted console/Admin SDK backfill into `adminMessages`, using the same document ID and only `to`, `message`, `from`, and `createdAt`. Preserve `from: 'Anonymous'`; do not copy `senderId`. Until backfilled or edited by their author, those older letters will not appear in admin mode.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

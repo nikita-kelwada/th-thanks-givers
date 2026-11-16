@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { auth, db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { userList } from "../userNames";
 
 type ThanksFormPageProps = {
@@ -19,7 +19,7 @@ export function ThanksFormPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipient || !message || isSubmitting) return;
+    if (!recipient || !message.trim() || message.length > 10000 || isSubmitting) return;
 
     setIsSubmitting(true);
 
@@ -31,13 +31,17 @@ export function ThanksFormPage({
       }
       const from = isAnonymous ? "Anonymous" : currentUser;
 
-      const docRef = await addDoc(collection(db, "messages"), {
+      const docRef = doc(collection(db, "messages"));
+      const letter = {
         to: recipient,
         message: message,
         from: from,
-        senderId : user.uid, //saves account
         createdAt: serverTimestamp(),
-      });
+      };
+      const batch = writeBatch(db);
+      batch.set(docRef, { ...letter, senderId: user.uid });
+      batch.set(doc(db, "adminMessages", docRef.id), letter);
+      await batch.commit();
 
       console.log("Message sent with ID: ", docRef.id);
       onFormSubmit();
@@ -51,7 +55,7 @@ export function ThanksFormPage({
   return (
     <div className="thanks-form-page">
       <form onSubmit={handleSubmit} className="thanks-form">
-        <h2>write a note!</h2>
+        <h2>write a message!</h2>
 
         <label htmlFor="recipient-select">to:</label>
         <select
@@ -60,7 +64,7 @@ export function ThanksFormPage({
           onChange={(e) => setRecipient(e.target.value)}
           required
         >
-          <option value="">who do you wish to thanks?</option>
+          <option value="">who do you wish to thank?</option>
           {userList
             .filter((user) => user.nickname !== currentUser)
             .map((user) => (
@@ -74,20 +78,21 @@ export function ThanksFormPage({
         <textarea
           id="message-text"
           rows={10}
+          maxLength={10000}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required
         />
 
-        <div className="anonymous-check">
+        <label className="anonymous-check">
           <input
             type="checkbox"
             id="anonymous-check"
             checked={isAnonymous}
             onChange={(e) => setIsAnonymous(e.target.checked)}
           />
-          <label htmlFor="anonymous-check">hide identity? 🥷</label>
-        </div>
+          <span>send anonymously</span>
+        </label>
 
         <button
           type="submit"

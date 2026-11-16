@@ -33,7 +33,18 @@
   background-image: url('/background.jpg'); 
 }
 .dashboard-page {
+  isolation: isolate;
+}
+
+.dashboard-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-image: url('/dashboard.jpg');
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
 }
 .thanks-form-page {
   background-image: url('/background.jpg'); /* Assumes same as welcome */
@@ -143,20 +154,48 @@
 }
 
 /* Checkbox styles */
-.anonymous-check {
+.thanks-form .anonymous-check {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
+  min-height: 44px;
   font-size: 1.2rem;
   color: #EECC9D;
+  cursor: pointer;
+  text-shadow: none;
 }
 .anonymous-check input {
-  width: 20px;
-  height: 20px;
-}
-.anonymous-check label {
-  font-size: 1.2rem;
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
   margin: 0;
+  flex-shrink: 0;
+  border: 1.5px solid #EECC9D;
+  border-radius: 4px;
+  background: rgba(95, 47, 26, 0.2);
+  cursor: pointer;
+}
+
+.anonymous-check input:checked {
+  background: #EECC9D;
+}
+
+.anonymous-check input:checked::after {
+  content: '';
+  width: 8px;
+  height: 4px;
+  margin-top: -2px;
+  border-left: 2px solid #754029;
+  border-bottom: 2px solid #754029;
+  transform: rotate(-45deg);
+}
+
+.anonymous-check input:focus-visible {
+  outline: 2px solid #EECC9D;
+  outline-offset: 4px;
 }
 
 
@@ -235,7 +274,7 @@
 
 .letter-heading {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 1rem;
   margin-bottom: 0.5rem;
@@ -259,4 +298,62 @@
 
 .dashboard-page > button {
   max-width: 100%;
+}
+
+.sent-letter button {
+  max-width: 100%;
+}
+
+.letter-edit-form {
+  max-width: none;
+  align-items: stretch;
+  text-align: left;
+  gap: 10px;
+}
+
+.letter-edit-form label {
+  font-size: 1.25rem;
+}
+
+.letter-edit-button {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: #EECC9D;
+  font: inherit;
+  font-size: 1.1rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.letter-edit-button:hover {
+  color: #fff0d8;
+}
+
+.letter-edit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.letter-edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.letter-edit-actions button {
+  width: auto;
+  margin-top: 0;
+  padding: 5px 18px;
+  font-size: 1.1rem;
+  border-width: 1px;
+  border-radius: 8px;
+}
+
+.button-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }

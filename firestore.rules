@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verified() {
+      return request.auth != null
+        && request.auth.token.email_verified == true;
+    }
+    function memberPath() {
+      return /databases/$(database)/documents/members/$(request.auth.token.email.lower());
+    }
+    function isMember() {
+      return verified() && exists(memberPath());
+    }
+    function nickname() {
+      return get(memberPath()).data.nickname;
+    }
+
+    function ownsLetter(letter) {
+      return letter.get('senderId', '') == request.auth.uid
+        || (!('senderId' in letter) && letter.from == nickname());
+    }
+
+    // Find this account's admin record.
+    function adminPath() {
+      return /databases/$(database)/documents/admin/$(request.auth.token.email.lower());
+    }
+
+    // Require an approved member with admin access enabled.
+    function isAdmin() {
+      return isMember()
+        && exists(adminPath())
+        && get(adminPath()).data.enabled == true;
+    }
+
+    // Only the organizer (through the console/Admin SDK) can assign identities.
+    match /members/{email} {
+      allow get: if verified() && email == request.auth.token.email.lower();
+      allow list, write: if false;
+    }
+
+    match /admin/{email} {
+      allow get: if isMember()
+        && email == request.auth.token.email.lower();
+      allow list, write: if false;
+    }
+    // Admins can read the safe copies of letters.
+    match /adminMessages/{messageId} {
+      // Check the copy against its original letter.
+      function matchesOriginal() {
+        let original = getAfter(
+          /databases/$(database)/documents/messages/$(messageId)
+        ).data;
+
+        return ownsLetter(original)
+          && request.resource.data == {
+            'to': original.to,
+            'message': original.message,
+            'from': original.from,
+            'createdAt': original.createdAt
+          };
+      }
+
+      allow read: if isAdmin();
+
+      // Writers can create a matching copy without their account ID.
+      allow create, update: if isMember() && matchesOriginal();
+      allow delete: if false;
+    }
+
+    match /messages/{messageId} {
+      allow create: if isMember()
+        && request.resource.data.keys().hasAll(['to', 'message', 'from', 'senderId', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['to', 'message', 'from', 'senderId', 'createdAt'])
+        && request.resource.data.senderId == request.auth.uid
+        && (request.resource.data.from == nickname() || request.resource.data.from == 'Anonymous')
+        && request.resource.data.to in [
+          'Abhitej', 'Ananya', 'Andrew', 'Annie', 'Ashlee', 'Bella',
+          'Blessing', 'Eric', 'Eva', 'Grace', 'Hezekiah', 'Jashith',
+          'Justin', 'Katelyn', 'Monish', 'Nikita', 'Nmesoma', 'Ramya', 'Roni',
+          'Sandeep', 'Shaan', 'Shanee', 'Veronica', 'William',
+          'ashi', 'evelyn', 'Rayla', 'Lucius', 'Caleb'
+        ]
+        && request.resource.data.to != get(memberPath()).data.realName
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 10000
+        && request.resource.data.createdAt == request.time;
+      // Supports the existing dashboard count, including older notes.
+      allow read: if isMember()
+        && (resource.data.from == nickname() || resource.data.get('senderId', '') == request.auth.uid);
+      allow update: if isMember()
+        && ownsLetter(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['message'])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 10000
+        && getAfter(/databases/$(database)/documents/adminMessages/$(messageId)).data == {
+          'to': request.resource.data.to,
+          'message': request.resource.data.message,
+          'from': request.resource.data.from,
+          'createdAt': request.resource.data.createdAt
+        };
+      allow delete: if false;
+    }
+  }
+}

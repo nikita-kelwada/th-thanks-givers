@@ -29,7 +29,7 @@ function App() {
       }
 
       try {
-        const memberReference = doc(db, "members", user.email);
+        const memberReference = doc(db, "members", user.email.toLowerCase());
         const memberSnapshot = await getDoc(memberReference);
 
         const member = memberSnapshot.data();
@@ -47,9 +47,6 @@ function App() {
         setCurrentUser(member.nickname);
         const adminReference = doc(db, "admin", user.email.toLowerCase());
         const adminDocument = await getDoc(adminReference);
-        // Temporarily check which admin record Firebase returns.
-        console.log("Admin email:", user.email.toLowerCase());
-        console.log("Admin record:", adminDocument.data());
 
 
         if (adminDocument.exists()){
