@@ -1,95 +1,73 @@
-# React + TypeScript + Vite
+# TAMUhack Hacksgiving Notes
 
-## Local Firebase setup
+A Friendsgiving thank-you note app for TAMUhack directors, built with React, TypeScript, and Firebase.
 
-Copy `.env.example` to `.env.local` in the project root and fill in the Firebase web app configuration from the Firebase console. The existing `.env.local`, if present, already contains your local configuration and is ignored by Git.
+**Live site:** https://tamuhack-hacksgiving-notes.web.app
 
-Run `npm install`, then `npm run dev`. Restart the dev server after changing environment variables. Vite exposes variables prefixed with `VITE_` to the browser, so use only Firebase's public web app configuration here; never add service account credentials.
+**Firebase project:** `tiny-thanks-a0fd0`
 
-Run `npm run build` to build the app for Firebase Hosting. The default Firebase project is `tiny-thanks-a0fd0`.
+Members sign in with their personal Google account to write, edit, or delete notes. Notes can be anonymous. Approved admins can view letters and filter by recipient.
 
-Hosting deploys to `https://tamuhack-hacksgiving-notes.web.app` in that project. Google sign-in requires `tamuhack-hacksgiving-notes.web.app` in Firebase Authentication → Settings → Authorized domains.
+## Run locally
 
-Production uses that same hostname as the authentication domain through `.env.production`, avoiding cross-domain sign-in storage on Safari. Before deploying, add `https://tamuhack-hacksgiving-notes.web.app/__/auth/handler` to the Google OAuth web client's authorized redirect URIs in Google Cloud Console → APIs & Services → Credentials. Keep the existing redirect URIs. Firebase's Authorized domains list and Google's OAuth redirect URI list are separate settings.
+Use Node.js 24.
 
-Users can edit message text from **see your written letters!** using **edit**, then **save** or **cancel**. Saving updates the original letter and its admin copy together while preserving the recipient, anonymity, and original timestamp. Older named letters without a sender account ID can be edited by the member with the matching nickname.
+1. Copy `.env.example` to `.env.local` and fill in your Firebase web app configuration. Skip this if your local file is already configured.
+2. Install dependencies and start the app:
 
-The editor also includes **delete**, which asks for confirmation before permanently removing the original letter and its admin copy together. Firestore rules restrict deletion to the author and prevent either copy from being left behind.
-
-The edit feature requires the updated Firestore rules. Deploy them along with the app using `npx firebase deploy --only firestore:rules,hosting` after building. The local build does not publish these changes.
-
-Admin mode lists `adminMessages` in real time, newest first, with a recipient filter. Access requires a verified member account and an `admin/<lowercase email>` document with the boolean field `enabled: true`. Create that document through the Firebase console; the app cannot grant admin access. Admin copies include the recipient, message, displayed sender, and timestamp, without the sender account ID.
-
-New submissions create the original and admin copy atomically, and edits update both. Older letters created before admin copies were introduced need a trusted console/Admin SDK backfill into `adminMessages`, using the same document ID and only `to`, `message`, `from`, and `createdAt`. Preserve `from: 'Anonymous'`; do not copy `senderId`. Until backfilled or edited by their author, those older letters will not appear in admin mode.
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Keep `.env.local` out of Git. `.env.production` contains the public sign-in domain and should be committed. Restart the dev server after changing environment files.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Deploy
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Sign in to Firebase once:
+
+```bash
+npx --yes --package firebase-tools firebase login
+```
+
+Build and publish the app and its security rules:
+
+```bash
+npm run build
+npx --yes --package firebase-tools firebase deploy --only hosting,firestore:rules --project tiny-thanks-a0fd0
+```
+
+Deployment updates the live site. Committing and pushing saves the source code to GitHub; it does not run this deployment.
+
+## Members and admins
+
+In Firestore:
+
+- `members/<lowercase email>`: approved accounts, with `realName` and `nickname` fields.
+- `admin/<lowercase email>`: add the boolean field `enabled: true` to grant an approved member admin access.
+
+Recipient options live in `src/userNames.ts`. Keep nicknames matched to Firestore and recipient values matched to `firestore.rules`. Names display in lowercase.
+
+Admins read `adminMessages`, which keeps anonymous authors hidden. Sending, editing, and deleting update both letter copies together. Older letters without admin copies need a trusted backfill using the same document ID and only `to`, `message`, `from`, and `createdAt`. Never copy `senderId` into `adminMessages`.
+
+## Google sign-in settings
+
+For sign-in on the live site, keep these settings:
+
+- **Firebase Authentication → Settings → Authorized domains:** `tamuhack-hacksgiving-notes.web.app`
+- **Google Cloud → APIs & Services → Credentials → OAuth web client → Authorized redirect URIs:**
+
+```text
+https://tiny-thanks-a0fd0.firebaseapp.com/__/auth/handler
+https://tamuhack-hacksgiving-notes.web.app/__/auth/handler
+```
+
+`.env.production` uses the live hostname for sign-in to avoid Safari storage issues. Keep both redirect URLs.
+
+## Checks
+
+```bash
+npm run lint
+npm run test:auth
+npm run build
 ```
