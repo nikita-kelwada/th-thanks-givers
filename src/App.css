@@ -339,6 +339,7 @@
 
 .letter-edit-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -356,4 +357,24 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.letter-delete-button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #EECC9D;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.letter-delete-button:hover {
+  color: #fff0d8;
+}
+
+.letter-delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

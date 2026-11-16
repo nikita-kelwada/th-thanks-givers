@@ -10,6 +10,7 @@ import {
   Timestamp,
   doc,
   runTransaction,
+  writeBatch,
 } from "firebase/firestore";
 
 type SentMessage = {
@@ -43,12 +44,14 @@ export function WrittenLettersPage({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isBusy = isSaving || isDeleting;
   const [saveError, setSaveError] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
 
   const saveLetter = async (event: React.FormEvent, letter: SentMessage) => {
     event.preventDefault();
-    if (isSaving || !draft.trim() || draft.length > 10000) return;
+    if (isBusy || !draft.trim() || draft.length > 10000) return;
     setIsSaving(true);
     setSaveError("");
     setSaveStatus("");
@@ -83,6 +86,34 @@ export function WrittenLettersPage({
       setSaveError("Couldn't save your changes. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const deleteLetter = async (letter: SentMessage) => {
+    if (isBusy || !window.confirm(`Delete your letter to ${recipientLabel(letter.to)}? This can't be undone.`)) return;
+    setIsDeleting(true);
+    setSaveError("");
+    setSaveStatus("");
+
+    try {
+      const user = auth.currentUser;
+      if (!user || (letter.senderId !== user.uid
+        && !(letter.senderId === undefined && letter.from === currentUser))) {
+        throw new Error("This letter cannot be deleted by this account.");
+      }
+      const batch = writeBatch(db);
+      batch.delete(doc(db, "messages", letter.id));
+      batch.delete(doc(db, "adminMessages", letter.id));
+      await batch.commit();
+      setMessages((previous) => previous.filter((message) => message.id !== letter.id));
+      setEditingId(null);
+      setDraft("");
+      setSaveStatus("your letter has been deleted");
+    } catch (error) {
+      console.error("Couldn't delete your letter:", error);
+      setSaveError("Couldn't delete your letter. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -202,17 +233,20 @@ export function WrittenLettersPage({
                     maxLength={10000}
                     required
                     autoFocus
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   {saveError && <p role="alert">{saveError}</p>}
                   <div className="letter-edit-actions">
-                    <button type="submit" className="button-primary" disabled={isSaving || !draft.trim()}>
+                    <button type="submit" className="button-primary" disabled={isBusy || !draft.trim()}>
                       {isSaving ? "saving..." : "save"}
                     </button>
-                    <button type="button" className="button-secondary" disabled={isSaving} onClick={() => {
+                    <button type="button" className="button-secondary" disabled={isBusy} onClick={() => {
                       setEditingId(null);
                       setSaveError("");
                     }}>cancel</button>
+                    <button type="button" className="letter-delete-button" disabled={isBusy} onClick={() => deleteLetter(letter)}>
+                      {isDeleting ? "deleting..." : "delete"}
+                    </button>
                   </div>
                 </form>
               ) : (
@@ -227,7 +261,7 @@ export function WrittenLettersPage({
         type="button"
         onClick={onBack}
         className="button-secondary"
-        disabled={isSaving}
+        disabled={isBusy}
       >
         back to dashboard
       </button>

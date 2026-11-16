@@ -64,7 +64,9 @@ service cloud.firestore {
 
       // Writers can create a matching copy without their account ID.
       allow create, update: if isMember() && matchesOriginal();
-      allow delete: if false;
+      allow delete: if isMember()
+        && ownsLetter(get(/databases/$(database)/documents/messages/$(messageId)).data)
+        && !existsAfter(/databases/$(database)/documents/messages/$(messageId));
     }
 
     match /messages/{messageId} {
@@ -100,7 +102,9 @@ service cloud.firestore {
           'from': request.resource.data.from,
           'createdAt': request.resource.data.createdAt
         };
-      allow delete: if false;
+      allow delete: if isMember()
+        && ownsLetter(resource.data)
+        && !existsAfter(/databases/$(database)/documents/adminMessages/$(messageId));
     }
   }
 }

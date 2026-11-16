@@ -8,7 +8,13 @@ Run `npm install`, then `npm run dev`. Restart the dev server after changing env
 
 Run `npm run build` to build the app for Firebase Hosting. The default Firebase project is `tiny-thanks-a0fd0`.
 
+Hosting deploys to `https://tamuhack-hacksgiving-notes.web.app` in that project. Google sign-in requires `tamuhack-hacksgiving-notes.web.app` in Firebase Authentication → Settings → Authorized domains.
+
+Production uses that same hostname as the authentication domain through `.env.production`, avoiding cross-domain sign-in storage on Safari. Before deploying, add `https://tamuhack-hacksgiving-notes.web.app/__/auth/handler` to the Google OAuth web client's authorized redirect URIs in Google Cloud Console → APIs & Services → Credentials. Keep the existing redirect URIs. Firebase's Authorized domains list and Google's OAuth redirect URI list are separate settings.
+
 Users can edit message text from **see your written letters!** using **edit**, then **save** or **cancel**. Saving updates the original letter and its admin copy together while preserving the recipient, anonymity, and original timestamp. Older named letters without a sender account ID can be edited by the member with the matching nickname.
+
+The editor also includes **delete**, which asks for confirmation before permanently removing the original letter and its admin copy together. Firestore rules restrict deletion to the author and prevent either copy from being left behind.
 
 The edit feature requires the updated Firestore rules. Deploy them along with the app using `npx firebase deploy --only firestore:rules,hosting` after building. The local build does not publish these changes.
 
